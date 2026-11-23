@@ -1,0 +1,92 @@
+// SnapshotGenerator.swift
+// Reusable template for high-resolution automated SwiftUI snapshot generation.
+
+import AppKit
+import SwiftUI
+
+@MainActor
+public enum SnapshotGenerator {
+    
+    public static func generateAll() {
+        print("🎬 [SnapshotGenerator] Beginning high-resolution product snapshot capture...")
+        
+        let targetDir = findImagesDirectory()
+        print("📁 [SnapshotGenerator] Target directory: \(targetDir.path)")
+        
+        // 1. Initialize Realistic Mock Controller (No Skeletons / No Network dependencies)
+        let mock = MockAppState()
+        
+        // 2. Standard View (Hero / Main Form Factor)
+        print("📸 Capturing screenshot-standard.png...")
+        let standardView = StandardContentView()
+            .environmentObject(mock)
+            .environment(\.isSnapshotMode, true)
+            .environment(\.forceControlsVisible, false)
+            .shadow(color: .black.opacity(0.48), radius: 26, x: 0, y: 14)
+            .shadow(color: .black.opacity(0.20), radius: 8, x: 0, y: 2)
+            .padding(34)
+        save(render(view: standardView), to: targetDir.appendingPathComponent("screenshot-standard.png"))
+        
+        // 3. Compact / Secondary View
+        print("📸 Capturing screenshot-compact.png...")
+        let compactView = CompactContentView()
+            .environmentObject(mock)
+            .environment(\.isSnapshotMode, true)
+            .environment(\.forceControlsVisible, false)
+            .shadow(color: .black.opacity(0.48), radius: 26, x: 0, y: 14)
+            .shadow(color: .black.opacity(0.20), radius: 8, x: 0, y: 2)
+            .padding(34)
+        save(render(view: compactView), to: targetDir.appendingPathComponent("screenshot-compact.png"))
+        
+        // 4. Paired / Docked Multi-Window View
+        print("📸 Capturing screenshot-docked.png...")
+        let dockedView = HStack(alignment: .top, spacing: 14) {
+            StandardContentView()
+            SidePanelView().frame(width: 280, height: 500)
+        }
+        .environmentObject(mock)
+        .environment(\.isSnapshotMode, true)
+        .environment(\.forceControlsVisible, false)
+        .shadow(color: .black.opacity(0.50), radius: 30, x: 0, y: 16)
+        .shadow(color: .black.opacity(0.22), radius: 10, x: 0, y: 3)
+        .padding(36)
+        save(render(view: dockedView), to: targetDir.appendingPathComponent("screenshot-docked.png"))
+        
+        print("✨ [SnapshotGenerator] Snapshots generated successfully!")
+    }
+    
+    // MARK: - Core Retina ImageRenderer
+    
+    public static func render<V: View>(view: V, scale: CGFloat = 2.0) -> Data? {
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = scale
+        guard let nsImage = renderer.nsImage,
+              let tiff = nsImage.tiffRepresentation,
+              let rep = NSBitmapImageRep(data: tiff),
+              let pngData = rep.representation(using: .png, properties: [:]) else {
+            return nil
+        }
+        return pngData
+    }
+    
+    public nonisolated static func save(_ data: Data?, to url: URL) {
+        guard let data = data else {
+            print("❌ Failed to render image for \(url.lastPathComponent)")
+            return
+        }
+        do {
+            try data.write(to: url, options: .atomic)
+            print("   ✅ Saved \(url.lastPathComponent) (\(data.count / 1024) KB)")
+        } catch {
+            print("❌ Error writing \(url.lastPathComponent): \(error)")
+        }
+    }
+    
+    public nonisolated static func findImagesDirectory() -> URL {
+        let docsImages = URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("docs/images")
+        if FileManager.default.fileExists(atPath: docsImages.path) {
+            return docsImages
+        }
+        return URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+    }
+}

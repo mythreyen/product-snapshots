@@ -1,0 +1,28 @@
+// SnapshotEnvironment.swift
+// Reusable SwiftUI Environment Keys for automated product snapshot pipelines.
+
+import SwiftUI
+
+private struct SnapshotModeKey: EnvironmentKey {
+    static let defaultValue: Bool = false
+}
+
+private struct ForceControlsVisibleKey: EnvironmentKey {
+    static let defaultValue: Bool = false
+}
+
+public extension EnvironmentValues {
+    /// True when views are being rendered inside an automated snapshot engine.
+    /// Use this to bypass async loading delays, spring animations, and t=0 transitions.
+    var isSnapshotMode: Bool {
+        get { self[SnapshotModeKey.self] }
+        set { self[SnapshotModeKey.self] = newValue }
+    }
+    
+    /// When true, force floating transport controls, window headers, and utility icons to render.
+    /// When false, keep content pristine by hiding hover/proximity overlays.
+    var forceControlsVisible: Bool {
+        get { self[ForceControlsVisibleKey.self] }
+        set { self[ForceControlsVisibleKey.self] = newValue }
+    }
+}
