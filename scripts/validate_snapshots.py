@@ -35,6 +35,7 @@ def is_magenta_placeholder(r, g, b):
     return r > 220 and g < 40 and b > 220
 
 def validate_image(path, args):
+    filename = os.path.basename(path)
     if not os.path.exists(path):
         return {"exists": False, "error": "File not found"}
     
@@ -72,8 +73,8 @@ def validate_image(path, args):
             if magenta_count > 0:
                 errors.append(f"{magenta_count} magenta missing-texture px")
 
-            # Check edge cutoff if image has alpha channel
-            if args.check_cutoff and "A" in img.getbands():
+            # Check edge cutoff for floating window shots (skip full-canvas opaque banners or logos)
+            if args.check_cutoff and "A" in img.getbands() and not filename.lower().endswith(('banner.png', 'logo.png')):
                 edge_alphas = []
                 for x in range(w):
                     edge_alphas.append(img.getpixel((x, 0))[3])
@@ -81,10 +82,13 @@ def validate_image(path, args):
                 for y in range(h):
                     edge_alphas.append(img.getpixel((0, y))[3])
                     edge_alphas.append(img.getpixel((w - 1, y))[3])
-                max_edge = max(edge_alphas)
-                # Allow tolerance of alpha <= 1 (negligible background noise)
-                if max_edge > 1:
-                    errors.append(f"shadow edge cutoff detected (edge alpha: {max_edge})")
+                
+                # If edges are fully opaque (e.g. solid background canvas), it's not a floating window
+                if min(edge_alphas) < 250:
+                    max_edge = max(edge_alphas)
+                    # Allow tolerance of alpha <= 1 (negligible background noise)
+                    if max_edge > 1:
+                        errors.append(f"shadow edge cutoff detected (edge alpha: {max_edge})")
 
             return {
                 "exists": True,
