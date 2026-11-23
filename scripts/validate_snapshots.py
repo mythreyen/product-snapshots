@@ -21,6 +21,7 @@ def parse_args():
     parser.add_argument("--dir", default="docs/images", help="Directory containing screenshots (default: docs/images)")
     parser.add_argument("--check-yellow", action="store_true", default=True, help="Check for yellow placeholder disc pixels")
     parser.add_argument("--check-magenta", action="store_true", default=True, help="Check for missing texture magenta pixels")
+    parser.add_argument("--check-cutoff", action="store_true", default=True, help="Check for abrupt shadow cutoff at image boundaries")
     parser.add_argument("--min-width", type=int, default=400, help="Minimum acceptable image width in pixels")
     parser.add_argument("--min-height", type=int, default=200, help="Minimum acceptable image height in pixels")
     return parser.parse_args()
@@ -70,6 +71,20 @@ def validate_image(path, args):
                 errors.append(f"{yellow_count} yellow placeholder px")
             if magenta_count > 0:
                 errors.append(f"{magenta_count} magenta missing-texture px")
+
+            # Check edge cutoff if image has alpha channel
+            if args.check_cutoff and "A" in img.getbands():
+                edge_alphas = []
+                for x in range(w):
+                    edge_alphas.append(img.getpixel((x, 0))[3])
+                    edge_alphas.append(img.getpixel((x, h - 1))[3])
+                for y in range(h):
+                    edge_alphas.append(img.getpixel((0, y))[3])
+                    edge_alphas.append(img.getpixel((w - 1, y))[3])
+                max_edge = max(edge_alphas)
+                # Allow tolerance of alpha <= 1 (negligible background noise)
+                if max_edge > 1:
+                    errors.append(f"shadow edge cutoff detected (edge alpha: {max_edge})")
 
             return {
                 "exists": True,

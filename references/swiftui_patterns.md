@@ -24,7 +24,7 @@ if isSnapshotMode {
 
 ---
 
-## 2. Multi-Layer Studio Shadows
+## 2. Multi-Layer Studio Shadows & Zero-Cutoff Padding
 
 macOS window shadows rendered by AppKit/WindowServer are often messy, asymmetric, or cut off when capturing windows. In `ImageRenderer`, SwiftUI creates clean alpha-channel transparent shadows that look like high-end marketing studio renders:
 
@@ -34,11 +34,19 @@ content
     .shadow(color: .black.opacity(0.48), radius: 26, x: 0, y: 14)
     // Tier 2: Crisp contact shadow near the edges
     .shadow(color: .black.opacity(0.20), radius: 8, x: 0, y: 2)
-    // Critical: provide outer padding larger than the maximum shadow radius (26 + 8 = 34)
-    .padding(34)
+    // Critical: provide outer padding to guarantee zero shadow clipping
+    .padding(95)
 ```
 
-Without `.padding(34)`, the bounding box of `ImageRenderer` will clip the outer glow, resulting in harsh rectangular cutoffs.
+### The Zero-Cutoff Padding Formula
+To prevent visible hard rectangular edge cutoffs where the shadow hits the PNG canvas boundary, calculate canvas padding using:
+$$\text{Padding} \ge (\text{Max Shadow Radius} \times 2.5) + |\text{Y Offset}| + 15$$
+
+For example:
+- **Standalone Cards / Windows** (`radius: 26, y: 14`): Use `.padding(95)` (or `.padding(140)` for large settings panels).
+- **Docked Multi-Window Arrangements** (`radius: 30, y: 16`): Use `.padding(110)`.
+
+This ensures the shadow opacity decays exponentially to 0% (`alpha == 0`) well before reaching the edge of the rasterized PNG.
 
 ---
 

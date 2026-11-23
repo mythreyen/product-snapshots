@@ -24,7 +24,7 @@ public enum SnapshotGenerator {
             .environment(\.forceControlsVisible, false)
             .shadow(color: .black.opacity(0.48), radius: 26, x: 0, y: 14)
             .shadow(color: .black.opacity(0.20), radius: 8, x: 0, y: 2)
-            .padding(34)
+            .padding(95)
         save(render(view: standardView), to: targetDir.appendingPathComponent("screenshot-standard.png"))
         
         // 3. Compact / Secondary View
@@ -35,7 +35,7 @@ public enum SnapshotGenerator {
             .environment(\.forceControlsVisible, false)
             .shadow(color: .black.opacity(0.48), radius: 26, x: 0, y: 14)
             .shadow(color: .black.opacity(0.20), radius: 8, x: 0, y: 2)
-            .padding(34)
+            .padding(95)
         save(render(view: compactView), to: targetDir.appendingPathComponent("screenshot-compact.png"))
         
         // 4. Paired / Docked Multi-Window View
@@ -49,7 +49,7 @@ public enum SnapshotGenerator {
         .environment(\.forceControlsVisible, false)
         .shadow(color: .black.opacity(0.50), radius: 30, x: 0, y: 16)
         .shadow(color: .black.opacity(0.22), radius: 10, x: 0, y: 3)
-        .padding(36)
+        .padding(110)
         save(render(view: dockedView), to: targetDir.appendingPathComponent("screenshot-docked.png"))
         
         print("✨ [SnapshotGenerator] Snapshots generated successfully!")
